@@ -5,15 +5,13 @@ import json
 
 app = FastAPI()
 
-# Keep a mapping of node_id -> WebSocket
+# Mapping of node_id -> WebSocket connection.
 connections: Dict[str, WebSocket] = {}
 
 @app.websocket("/node")
 async def node_ws(websocket: WebSocket):
     """
-    Each chat-service node will connect here using:
-      ws://node2node-service:8080/node?node_id=<some-node>
-    We'll store that in 'connections'.
+    Chat-service nodes connect here with a query parameter (e.g. ?node_id=chat-service-1).
     """
     node_id = websocket.query_params.get("node_id", "unknown")
     await websocket.accept()
@@ -26,9 +24,7 @@ async def node_ws(websocket: WebSocket):
             msg = json.loads(data)
             target_node = msg.get("target_node")
             payload = msg.get("message")
-
-            print(f"Node2Node Received message for {target_node}: {payload}")
-
+            print(f"Node2Node received message for {target_node}: {payload}")
             if target_node in connections:
                 print(f"Forwarding message to {target_node}")
                 await connections[target_node].send_text(json.dumps({
@@ -37,7 +33,6 @@ async def node_ws(websocket: WebSocket):
                 }))
             else:
                 print(f"ERROR: No connection for node {target_node}")
-
     except WebSocketDisconnect:
         print(f"Node {node_id} disconnected.")
         connections.pop(node_id, None)

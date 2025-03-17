@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.8" 
 
 services:
   mock-presence-service:
@@ -7,6 +7,7 @@ services:
     restart: always
     ports:
       - "8004:8004"
+    # REPLICAS is kept for legacy/demo purposes
     environment:
       - REPLICAS=chat-service-1,chat-service-2
 
