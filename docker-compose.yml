@@ -1,4 +1,4 @@
-version: "3.8" 
+version: "3.8"
 
 services:
   mock-presence-service:
@@ -7,16 +7,29 @@ services:
     restart: always
     ports:
       - "8004:8004"
-    # REPLICAS is kept for legacy/demo purposes
     environment:
       - REPLICAS=chat-service-1,chat-service-2
 
+  # Deploy multiple replicas of the node2node service.
   mock-node2node-service:
     build: ./mock-node2node-service
-    container_name: mock-node2node-service
+    restart: always
+    deploy:
+      replicas: 2
+    expose:
+      - "8080"
+
+  # Nginx load balancer for the node2node service.
+  mock-node2node-lb:
+    image: nginx:latest
+    container_name: mock-node2node-lb
     restart: always
     ports:
       - "8080:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - mock-node2node-service
 
   mock-chat-service-1:
     build: ./mock-chat-service
@@ -27,10 +40,10 @@ services:
     environment:
       - NODE_ID=chat-service-1
       - PRESENCE_SERVICE_URL=http://mock-presence-service:8004
-      - NODE2NODE_URL=ws://mock-node2node-service:8080/node
+      - NODE2NODE_URL=ws://mock-node2node-lb:8080/node
     depends_on:
       - mock-presence-service
-      - mock-node2node-service
+      - mock-node2node-lb
 
   mock-chat-service-2:
     build: ./mock-chat-service
@@ -41,7 +54,7 @@ services:
     environment:
       - NODE_ID=chat-service-2
       - PRESENCE_SERVICE_URL=http://mock-presence-service:8004
-      - NODE2NODE_URL=ws://mock-node2node-service:8080/node
+      - NODE2NODE_URL=ws://mock-node2node-lb:8080/node
     depends_on:
       - mock-presence-service
-      - mock-node2node-service
+      - mock-node2node-lb
