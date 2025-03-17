@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  mock-presence-service:
+    build: ./mock-presence-service
+    container_name: mock-presence-service
+    restart: always
+    ports:
+      - "8004:8004"
+    environment:
+      - REPLICAS=chat-service-1,chat-service-2
+
+  mock-node2node-service:
+    build: ./mock-node2node-service
+    container_name: mock-node2node-service
+    restart: always
+    ports:
+      - "8080:8080"
+
+  mock-chat-service-1:
+    build: ./mock-chat-service
+    container_name: mock-chat-service-1
+    restart: always
+    ports:
+      - "8002:8002"
+    environment:
+      - NODE_ID=chat-service-1
+      - PRESENCE_SERVICE_URL=http://mock-presence-service:8004
+      - NODE2NODE_URL=ws://mock-node2node-service:8080/node
+    depends_on:
+      - mock-presence-service
+      - mock-node2node-service
+
+  mock-chat-service-2:
+    build: ./mock-chat-service
+    container_name: mock-chat-service-2
+    restart: always
+    ports:
+      - "8003:8002"
+    environment:
+      - NODE_ID=chat-service-2
+      - PRESENCE_SERVICE_URL=http://mock-presence-service:8004
+      - NODE2NODE_URL=ws://mock-node2node-service:8080/node
+    depends_on:
+      - mock-presence-service
+      - mock-node2node-service
